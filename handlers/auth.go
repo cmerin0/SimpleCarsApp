@@ -65,10 +65,7 @@ func GetUsers(c *fiber.Ctx) error {
 
 	users := []models.User{} // Creating a list of users bucket
 	db.DB.Db.Find(&users)    //Getting all users
-	return c.Render("users", fiber.Map{
-		"Title": "Users",
-		"Users": users,
-	}) // Returning all users and sending to template
+	return c.Status(fiber.StatusOK).JSON(users)
 }
 
 func Register(c *fiber.Ctx) error {

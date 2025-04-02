@@ -1,0 +1,40 @@
+
+# Binaries and object files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go specific
+*.o
+*.a
+/vendor/
+/go.sum
+
+# Build and debug
+/bin/
+/debug/
+/dist/
+/build/
+
+# Environment and config
+.env
+.env.local
+*.env.*
+config.local.yaml
+
+# Logs
+*.log
+/logs/
+
+# Test coverage
+coverage.txt
+coverage.html
+
+# Temporary files
+/tmp/
+*.tmp
+tmp/

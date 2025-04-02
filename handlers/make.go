@@ -19,9 +19,9 @@ func GetMakes(c *fiber.Ctx) error {
 
 	makes := []models.Make{} // Creates an array of Models make
 
-	db.DB.Db.Order("ID asc").Find(&makes) // Find all the makes and store them in the makes variable
+	db.DB.Db.Order("ID asc").Preload("Cars").Find(&makes) // Find all the makes and store them in the makes variable
 
-	return c.Status(200).JSON(makes)
+	return c.Status(200).JSON(makes) // Rturn a list of makes
 }
 
 // Route that returns a make by ID
@@ -56,8 +56,8 @@ func CreateMake(c *fiber.Ctx) error {
 	}
 
 	// If not errors we create the new make and send a status 200 code response and the make created
-	db.DB.Db.Create(&make) //package.global_variable.instace.pointer_to_gorm_database_connection
-	return c.Redirect("/makes")
+	db.DB.Db.Create(&make)          //package.global_variable.instace.pointer_to_gorm_database_connection
+	return c.Status(201).JSON(make) // Returns status 201 Created + Make created
 
 }
 
@@ -88,7 +88,7 @@ func UpdateMake(c *fiber.Ctx) error {
 	make.ID = existingMake.ID // Ensure the ID is set for the update
 	db.DB.Db.Save(&make)
 
-	return c.Redirect("/makes") // return a status 200 response + make updated
+	return c.Status(200).JSON(make) // return a status 200 Ok response + make Updated
 
 }
 
@@ -108,6 +108,6 @@ func DeleteMake(c *fiber.Ctx) error {
 	// Delete the make
 	db.DB.Db.Delete(&existingMake)
 
-	return c.Redirect("/makes") // return a status 204 response
+	return c.SendStatus(204) // return a status 204 response No Content
 
 }

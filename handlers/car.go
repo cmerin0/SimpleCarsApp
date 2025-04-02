@@ -39,6 +39,17 @@ func CreateCar(c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error()) // Return a status 400 code response and the error
 	}
 
+	// Checking whether Make exist before inserting a Car
+	makeId := car.MakeID     // Get the make id from the request
+	make := new(models.Make) // Create an Make Object
+	result := db.DB.Db.First(&make, makeId)
+	if result.Error != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Make not found",
+		})
+
+	}
+
 	db.DB.Db.Create(&car) // Create the car in the database
 
 	return c.Status(201).JSON(car) // Return a status 201 code response and the car
@@ -55,11 +66,22 @@ func UpdateCar(c *fiber.Ctx) error {
 
 	// Check if the Car exists
 	existingCar := new(models.Car)
-	result := db.DB.Db.First(&existingCar, id)
-	if result.Error != nil {
+	carResult := db.DB.Db.First(&existingCar, id)
+	if carResult.Error != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "Car not found",
 		})
+	}
+
+	// Checking whether Make exist before updating a Car
+	makeId := car.MakeID     // Get the make id from the request
+	make := new(models.Make) // Create an Make Object
+	makeResult := db.DB.Db.First(&make, makeId)
+	if makeResult.Error != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Make not found",
+		})
+
 	}
 
 	// Update the Car

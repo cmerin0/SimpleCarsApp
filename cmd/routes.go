@@ -13,23 +13,25 @@ func setupRoutes(app *fiber.App) {
 
 	// Routes of Authentication
 	auth := app.Group("/auth", handlers.VerifyToken)
-	app.Get("/users", handlers.GetUsers)
+	auth.Get("/users", handlers.GetUsers)
 	auth.Post("/logout", handlers.Logout)
 	app.Post("/login", handlers.Login)
 	app.Post("/register", handlers.Register)
 
 	// Routes of Make
-	app.Get("/makes", handlers.GetMakes)
-	app.Get("/makes/:id", handlers.GetMakeById)
-	app.Post("/makes", handlers.CreateMake)
-	app.Put("/makes/:id", handlers.UpdateMake)
-	app.Delete("/makes/:id", handlers.DeleteMake)
+	makesRoute := app.Group("/makes")
+	makesRoute.Get("/", handlers.GetMakes)
+	makesRoute.Get("/:id", handlers.GetMakeById)
+	makesRoute.Post("/", handlers.CreateMake)
+	makesRoute.Put("/:id", handlers.UpdateMake)
+	makesRoute.Delete("/:id", handlers.DeleteMake)
 
 	// Routes of Car
-	app.Get("/cars", handlers.GetCars)
-	app.Get("/cars/:id", handlers.GetCarById)
-	app.Post("/cars", handlers.CreateCar)
-	app.Put("/cars/:id", handlers.UpdateCar)
-	app.Delete("/cars/:id", handlers.DeleteCar)
+	carsRoute := app.Group("/cars")
+	carsRoute.Get("/", handlers.GetCars)
+	carsRoute.Get("/:id", handlers.GetCarById)
+	carsRoute.Post("/", handlers.CreateCar)
+	carsRoute.Put("/:id", handlers.UpdateCar)
+	carsRoute.Delete("/:id", handlers.DeleteCar)
 
 }
