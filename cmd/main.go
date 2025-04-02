@@ -10,6 +10,9 @@ func main() {
 	// Connect to the database
 	db.ConnectDB()
 
+	// Connect to the cache database
+	db.ConnectCache()
+
 	// Initializing app with Fiber new
 	app := fiber.New()
 

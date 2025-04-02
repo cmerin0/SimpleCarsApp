@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/cmerin0/SimpleCarsApp/db"
 	"github.com/cmerin0/SimpleCarsApp/handlers"
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,7 +21,9 @@ func setupRoutes(app *fiber.App) {
 
 	// Routes of Make
 	makesRoute := app.Group("/makes")
-	makesRoute.Get("/", handlers.GetMakes)
+	makesRoute.Get("/", func(c *fiber.Ctx) error {
+		return handlers.GetMakes(c, db.Cache.RedisClient)
+	})
 	makesRoute.Get("/:id", handlers.GetMakeById)
 	makesRoute.Post("/", handlers.CreateMake)
 	makesRoute.Put("/:id", handlers.UpdateMake)

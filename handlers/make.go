@@ -1,12 +1,22 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/cmerin0/SimpleCarsApp/db"
 	"github.com/cmerin0/SimpleCarsApp/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
+	"github.com/redis/go-redis/v9"
 )
+
+const cacheKeyAllMakes = "all_makes"
+const cacheExpiration = 1 * time.Minute
+
+var ctx = context.Background()
 
 func Home(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
@@ -15,13 +25,51 @@ func Home(c *fiber.Ctx) error {
 }
 
 // Route that returns all the makes
-func GetMakes(c *fiber.Ctx) error {
+func GetMakes(c *fiber.Ctx, redisClient *redis.Client) error {
 
-	makes := []models.Make{} // Creates an array of Models make
+	// Check if data exists in Redis cache
+	cachedMakes, err := redisClient.Get(ctx, cacheKeyAllMakes).Result()
 
+	if err == nil {
+		log.Info("Serving from Redis Cache")
+		var makes []models.Make
+		if err := json.Unmarshal([]byte(cachedMakes), &makes); err != nil {
+			log.Fatal("Error unmarshalling cached makes: %v\n", err) // Fallback to database if cache data is corrupted
+			return fetchMakesFromDBAndCache(c, redisClient)
+		}
+		// Returning cached makes data
+		return c.Status(fiber.StatusOK).JSON(makes)
+	}
+
+	if err != redis.Nil {
+		fmt.Printf("Error accessing Redis cache: %v\n", err) // Don't immediately fail, fallback to database
+	}
+
+	return fetchMakesFromDBAndCache(c, redisClient) // Data not in cache or Redis error, fetch from database
+}
+
+func fetchMakesFromDBAndCache(c *fiber.Ctx, redisClient *redis.Client) error {
+
+	makes := []models.Make{}                              // Creates an array of Models make
 	db.DB.Db.Order("ID asc").Preload("Cars").Find(&makes) // Find all the makes and store them in the makes variable
 
-	return c.Status(200).JSON(makes) // Rturn a list of makes
+	// Cache the fetched data in Redis
+	makesJSON, err := json.Marshal(makes)
+
+	if err != nil {
+		fmt.Printf("Error marshalling makes for cache: %v\n", err)
+		return c.Status(fiber.StatusOK).JSON(makes) // Continue without caching if marshalling fails
+	}
+
+	// Setting the makes (Inserting into Redis)
+	err = redisClient.Set(ctx, cacheKeyAllMakes, makesJSON, cacheExpiration).Err()
+
+	if err != nil {
+		fmt.Printf("Error setting makes in Redis cache: %v\n", err)
+	}
+
+	log.Info("Serving from Database")
+	return c.Status(fiber.StatusOK).JSON(makes)
 }
 
 // Route that returns a make by ID

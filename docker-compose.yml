@@ -4,7 +4,7 @@ services:
   app:
     build: .
     image: "go-app"
-    container_name: "cars-app"
+    container_name: cars-app
     env_file:
       - .env
     ports:
@@ -16,7 +16,7 @@ services:
 
   db: 
     image: postgres:17-alpine
-    container_name: "cars-db"
+    container_name: cars-db
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -27,7 +27,17 @@ services:
       - postgres-db:/var/lib/postgresql/data
     restart: unless-stopped
 
+  cache:
+    image: redis:alpine
+    container_name: cars-cache
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
 volumes:
   postgres-db:
+  redis-data:
     
     
