@@ -11,10 +11,7 @@ func GetCars(c *fiber.Ctx) error {
 
 	db.DB.Db.Find(&cars) // Find all the cars and store them in the cars variable
 
-	return c.Render("cars", fiber.Map{
-		"Title": "Cars",
-		"Cars":  cars,
-	})
+	return c.Status(200).JSON(cars) // Return a status 200 code response and the cars
 }
 
 func GetCarById(c *fiber.Ctx) error {

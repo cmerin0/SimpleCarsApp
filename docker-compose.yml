@@ -2,16 +2,26 @@ version: '3.8'
 
 services:
   app:
-    build: .
-    image: "go-app"
+    build:
+      context: .
+    image: go-app
     container_name: cars-app
-    env_file:
-      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
     ports:
       - 3000:3000
+    env_file:
+      - .env
     volumes:
       - .:/usr/src/app
+    networks:
+      - main-network
     command: air cmd/main.go -b 0.0.0.0
+    cpus: 0.5
+    mem_limit: 512m
     restart: unless-stopped
 
   db: 
@@ -21,20 +31,43 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-    ports:
-      - 5432:5432
+    expose:
+      - 5432
     volumes:
       - postgres-db:/var/lib/postgresql/data
+    networks:
+      - main-network
+    cpus: 0.25
+    mem_limit: 512m
     restart: unless-stopped
+    healthcheck:
+      test:  ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
 
   cache:
     image: redis:alpine
     container_name: cars-cache
-    ports:
-      - 6379:6379
+    expose:
+      - 6379
     volumes:
       - redis-data:/data
+    networks:
+      - main-network
+    cpus: 0.50
+    mem_limit: 512m
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+networks:
+  main-network:
+    name: main-network
+    driver: bridge
 
 volumes:
   postgres-db:
