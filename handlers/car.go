@@ -1,17 +1,45 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
+
 	"github.com/cmerin0/SimpleCarsApp/db"
 	"github.com/cmerin0/SimpleCarsApp/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
+
+const cacheKeyAllCars = "all_cars"
 
 func GetCars(c *fiber.Ctx) error {
 	cars := []models.Car{} // Creates an array of Models cars
 
+	// Access Redis Client
+	redisClient := db.Cache.RedisClient
+
+	// Check if data exists in Redis cache
+	cachedCars, err := redisClient.Get(context.Background(), cacheKeyAllCars).Result()
+	if err == nil {
+		// Data found in Redis cache, return it
+		log.Info("Serving from Redis Cache")
+		var cars []models.Car
+		if err := json.Unmarshal([]byte(cachedCars), &cars); err != nil {
+			return c.Status(500).JSON("Error unmarshalling cached data")
+		}
+		return c.Status(fiber.StatusOK).JSON(cars)
+	}
+
 	db.DB.Db.Find(&cars) // Find all the cars and store them in the cars variable
 
-	return c.Status(200).JSON(cars) // Return a status 200 code response and the cars
+	// Serialize and cache the result
+	carsJSON, err := json.Marshal(cars)
+	if err == nil {
+		redisClient.Set(context.Background(), cacheKeyAllCars, carsJSON, cacheExpiration)
+	}
+
+	log.Info("Serving from Database")
+	return c.Status(fiber.StatusOK).JSON(cars) // Return a status 200 code response and the cars
 }
 
 func GetCarById(c *fiber.Ctx) error {
